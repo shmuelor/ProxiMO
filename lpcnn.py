@@ -73,7 +73,7 @@ class wBasicBlock(nn.Module):
 
 		
 class LPCNN(nn.Module):
-	def __init__(self, gt_mean, gt_std, use_pinv=False):
+	def __init__(self, gt_mean, gt_std, use_pinv=False, n_channels=32, n_wblocks=8):
 		super().__init__()
 		self.gt_mean = torch.from_numpy(np.load(str(gt_mean))).float()
 		self.gt_std = torch.from_numpy(np.load(str(gt_std))).float()
@@ -85,20 +85,20 @@ class LPCNN(nn.Module):
 		#self.alpha = torch.nn.Parameter(torch.ones(self.iter_num)*4)
 
 		self.gen = nn.Sequential(
-				nn.Conv3d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1, bias=False),
+				nn.Conv3d(in_channels=1, out_channels=n_channels, kernel_size=3, stride=1, padding=1, bias=False),
 				nn.ReLU(inplace=True),
-				self.make_layer(wBasicBlock, 8),
-				nn.Conv3d(in_channels=32, out_channels=32, kernel_size=1, stride=1, padding=0, bias=False),
+				self.make_layer(wBasicBlock, num_of_layer=n_wblocks, n_planes=n_channels),
+				nn.Conv3d(in_channels=n_channels, out_channels=n_channels, kernel_size=1, stride=1, padding=0, bias=False),
 				nn.ReLU(inplace=True),
-				nn.Conv3d(in_channels=32, out_channels=32, kernel_size=1, stride=1, padding=0, bias=False),
+				nn.Conv3d(in_channels=n_channels, out_channels=n_channels, kernel_size=1, stride=1, padding=0, bias=False),
 				nn.ReLU(inplace=True),
-				nn.Conv3d(in_channels=32, out_channels=1, kernel_size=1, stride=1, padding=0, bias=False)
+				nn.Conv3d(in_channels=n_channels, out_channels=1, kernel_size=1, stride=1, padding=0, bias=False)
 		)
 				
-	def make_layer(self, block, num_of_layer):
+	def make_layer(self, block, num_of_layer, n_planes=32):
 		layers = []
 		for _ in range(num_of_layer):
-			layers.append(block())
+			layers.append(block(inplanes=n_planes, planes=n_planes))
 		return nn.Sequential(*layers)
 
 	def forward(self, y, dk, mask):
