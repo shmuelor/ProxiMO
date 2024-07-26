@@ -215,8 +215,7 @@ def get_loader(subset='train', train_set_w_cosmos=[], train_set_wo_cosmos=[], va
     # biocard_all = np.concatenate((biocard, np.arange(6001, 6024)))
     
     if subset == 'train':
-        dataset = MoiDataset(sub_w_cosmos=train_set_w_cosmos, sub_wo_cosmos=train_set_wo_cosmos,
-                             split=subset, small_angles=None, **kwargs)
+        dataset = MoiDataset(sub_w_cosmos=train_set_w_cosmos, sub_wo_cosmos=train_set_wo_cosmos, split=subset, **kwargs)
         if len(train_set_w_cosmos) and len(train_set_wo_cosmos):
             loader = torch.utils.data.DataLoader(
                 dataset,
@@ -234,7 +233,7 @@ def get_loader(subset='train', train_set_w_cosmos=[], train_set_wo_cosmos=[], va
                 pin_memory=True,
             )
     elif subset == 'validation':
-        dataset = MoiDataset(sub_w_cosmos=val_set, split=subset, small_angles=False, **kwargs)
+        dataset = MoiDataset(sub_w_cosmos=val_set, split=subset, **kwargs)
         loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
@@ -244,7 +243,7 @@ def get_loader(subset='train', train_set_w_cosmos=[], train_set_wo_cosmos=[], va
             drop_last=False,
         )
     elif subset == 'test':
-        dataset = MoiDataset(sub_w_cosmos=test_set, split=subset, small_angles=False, **kwargs)
+        dataset = MoiDataset(sub_w_cosmos=test_set, split=subset, **kwargs)
         loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
