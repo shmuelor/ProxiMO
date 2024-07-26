@@ -13,42 +13,6 @@ from proximal_sti.lib.QsmOperatorToolkit import QsmOperator
 from torch.utils.data.sampler import Sampler
 
 
-# class ThreeStreamsBatchSampler(Sampler):
-#     """Iterate two sets of indices
-#     Reference: https://github.com/yulequan/UA-MT/blob/88ed29ad794f877122e542a7fa9505a76fa83515/code/dataloaders/la_heart.py#L162
-#     """
-#     def __init__(self, indices1, indices2, indices3, batch_size, shuffle=True):
-#         self.indices1 = indices1
-#         self.indices2 = indices2
-#         self.indices3 = indices3
-
-#         self.batch_size = batch_size
-#         self.shuffle = shuffle
-
-#     def __iter__(self):
-#         iter1 = np.random.permutation(self.indices1) if self.shuffle else self.indices1
-#         iter2 = np.random.permutation(self.indices2) if self.shuffle else self.indices2
-#         iter3 = np.random.permutation(self.indices3) if self.shuffle else self.indices3
-        
-#         def grouper(iterable, n):
-#             "Collect data into fixed-length chunks or blocks"
-#             # grouper('ABCDEFG', 3) --> ABC DEF"
-#             args = [iter(iterable)] * n
-#             return zip(*args)
-        
-#         batches1 = list(grouper(iter1, self.batch_size))
-#         batches2 = list(grouper(iter2, self.batch_size))
-#         batches3 = list(grouper(iter3, self.batch_size))
-
-#         batches = np.random.permutation(batches1 + batches2 + batches3).tolist() if self.shuffle else np.array(batches1 + batches2 + batches3).tolist()
-        
-#         return iter(batches)
-
-#     def __len__(self):
-#         # return len(self.primary_indices) // self.batch_size + len(self.secondary_indices) // self.batch_size
-#         return len(self.indices1) + len(self.indices2)
-
-
 class MixStreamsBatchSampler(Sampler):
     """Iterate two sets of indices
     Reference: https://github.com/yulequan/UA-MT/blob/88ed29ad794f877122e542a7fa9505a76fa83515/code/dataloaders/la_heart.py#L162
@@ -76,29 +40,8 @@ class MixStreamsBatchSampler(Sampler):
         return iter(batches)
 
     def __len__(self):
-        # return len(self.primary_indices) // self.batch_size + len(self.secondary_indices) // self.batch_size
         return len(self.indices1) + len(self.indices2)
 
-
-# def get_seperating_sampler(patch_list, batch_size, shuffle=True):
-
-#     group1 = [1, 2, 3, 4]
-#     group2 = [5, 6, 8, 9]
-#     group3 = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112]
-#     ind1, ind2, ind3 = [], [], []
-#     for i, (sub, _, _, _, _, _) in enumerate(patch_list):
-#         if sub in group1:
-#             ind1.append(i)
-#         elif sub in group2:
-#             ind2.append(i)
-#         elif sub in group3:
-#             ind3.append(i)
-#         else:
-#             raise ValueError
-            
-#     sampler = ThreeStreamsBatchSampler(ind1, ind2, ind3, batch_size=batch_size, shuffle=shuffle)
-    
-#     return sampler
 
 def get_mixing_sampler(patch_list, batch_size, shuffle=True):
 
@@ -115,8 +58,7 @@ def get_mixing_sampler(patch_list, batch_size, shuffle=True):
 
 
 class MoiDataset(Dataset):
-    def __init__(self, sub_w_cosmos=None, sub_wo_cosmos=None, split='train', is_aug=False, 
-                 sep='partition', k=2, norm=False, limit_angle=None):
+    def __init__(self, sub_w_cosmos=None, sub_wo_cosmos=None, split='train', is_aug=False, sep='partition', k=2, norm=False):
         """
         sub_list: list of subject id
         """
@@ -130,7 +72,6 @@ class MoiDataset(Dataset):
         # k is the num of orientations that we use for each subject w/o cosmos. if k >= 4 we can have cosmos for those subjects.
         assert k < 4
         self.k = k
-        self.limit_angle = limit_angle
         
         self.split = split
         self.is_aug = is_aug
@@ -161,14 +102,6 @@ class MoiDataset(Dataset):
         for sub in self.sub_w_cosmos:
             all_oris = os.listdir(oj(self.data_root, 'Sub{0:04d}'.format(sub)))
             oris = [int(ori[3:]) for ori in all_oris if ori.startswith('ori')]
-            if self.limit_angle is not None:
-                oris_lim = []
-                for ori in oris:
-                    angle_file = oj(self.data_root, 'Sub{0:04d}'.format(sub), f'ori{ori}', 'Sub{0:04d}_ori{1}.txt'.format(sub, ori))
-                    angle_vec = np.loadtxt(angle_file)
-                    if np.rad2deg(np.linalg.norm([0, 0, 1] - angle_vec)) <= self.limit_angle:
-                        oris_lim.append(ori)
-                oris = oris_lim
             oris_dict[sub] = oris
         return oris_dict
 
@@ -178,14 +111,6 @@ class MoiDataset(Dataset):
             all_oris = os.listdir(oj(self.data_root, 'Sub{0:04d}'.format(sub)))
             all_oris = [int(ori[3:]) for ori in all_oris if ori.startswith('ori')]   
             oris = np.random.choice(all_oris, size=min(self.k, len(all_oris)), replace=False)
-            if self.limit_angle is not None:
-                oris_lim = []
-                for ori in oris:
-                    angle_file = oj(self.data_root, 'Sub{0:04d}'.format(sub), f'ori{ori}', 'Sub{0:04d}_ori{1}.txt'.format(sub, ori))
-                    angle_vec = np.loadtxt(angle_file)
-                    if np.rad2deg(np.linalg.norm([0, 0, 1] - angle_vec)) <= self.limit_angle:
-                        oris_lim.append(ori)
-                oris = oris_lim
             oris_dict[sub] = oris
         return oris_dict
 
@@ -242,20 +167,21 @@ class MoiDataset(Dataset):
             mask = mask[x:x+self.patch_size, y:y+self.patch_size, z:z+self.patch_size]
         
         cosmos = np.zeros_like(mask)
+        affine = np.eye(4)
         if os.path.isfile(oj(self.data_root, fn['cosmos'])):
-            cosmos = nib.load(oj(self.data_root, fn['cosmos'])).get_fdata()
+            nib_file = nib.load(oj(self.data_root, fn['cosmos']))
+            cosmos = nib_file.get_fdata()
+            affine = nib_file.affine
             if self.sep == 'partition':
                 cosmos = cosmos[x:x+self.patch_size, y:y+self.patch_size, z:z+self.patch_size]
             if self.norm:
                 cosmos = cosmos - self.gt_mean
                 cosmos = cosmos / self.gt_std
                 cosmos = cosmos * mask
-        else:
-            assert not has_cosmos
         
         dipole_path = oj(self.data_root, fn['dipole'])
         
-        return phase, mask, cosmos, dipole_path, {'sub': sub, 'ori': ori, 'has_cosmos': has_cosmos}
+        return phase, mask, cosmos, dipole_path, {'sub': sub, 'ori': ori, 'has_cosmos': has_cosmos, 'affine': affine, 'patch_x': x, 'patch_y': y, 'patch_z': z}
 
     def aug(self, patch, mask):
         
@@ -280,48 +206,45 @@ class MoiDataset(Dataset):
         return {'phase': phase_patch, 'mask': mask, 'cosmos': cosmos_patch, 
                 'dipole_path': dipole_path + ' ', 'metadata': metadata}
 
-def get_loader(subset='train', sub_list=None, batch_size=1, **kwargs):
-    ds1 = [1, 2, 3, 4, 5, 6, 8, 9]
-    ds2 = np.arange(101, 113)
-    bio1 = np.arange(1001, 1101)
-    biocard = np.concatenate((np.arange(1001, 1101), np.arange(2001, 2101), np.arange(3001, 3101),
-                                np.arange(4001, 4101), np.arange(5001, 5100), np.arange(6001, 6024)))
-    all_subs = []
-    # all_subs.extend(ds1)
-    # all_subs.extend(ds2)
-    # all_subs.extend(np.arange(1001, 1101))
-    # all_subs.extend(np.arange(2001, 2101))
-    # all_subs.extend(np.arange(3001, 3101))
-    # all_subs.extend(np.arange(4001, 4101))
-    # all_subs.extend(np.arange(5001, 5100))
-    # all_subs.extend(np.arange(6001, 6024))
-    default_test_subs = [3, 6]
-    test_subs_v2 = [1, 2, 3, 4, 5, 6, 8, 9]
-    test_subs_v3 = [1, 2, 3, 4, 5, 6, 8, 9, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112]
-    test_subs = default_test_subs
-    new_test_subs = [103, 106]
-    # default_test_subs = [3, 6, 103, 106]
-    # default_train_subs = [sub for sub in all_subs if sub not in default_test_subs]
-    # train_subs_w_cosmos = [sub for sub in all_subs if sub < 1000 
-    #                        and sub not in test_subs and sub not in new_test_subs]
-    train_subs_wo_cosmos = [sub for sub in all_subs if sub >= 1000] 
-    lpcnn_train_subs = [1, 2, 4, 5, 8, 9]
-    lpcnn_test_subs = [3, 6]
+def get_loader(subset='train', train_set_w_cosmos=[], train_set_wo_cosmos=[], val_set=[], test_set=[], batch_size=1, **kwargs):
+    # ds1 = [1, 2, 3, 4, 5, 6, 8, 9]
+    # ds2 = np.arange(101, 113)
+    # bio1 = np.arange(1001, 1101)
+    # biocard = np.concatenate((np.arange(1001, 1101), np.arange(2001, 2101), np.arange(3001, 3101),
+    #                             np.arange(4001, 4101), np.arange(5001, 5100)))
+    # biocard_all = np.concatenate((biocard, np.arange(6001, 6024)))
+    
     if subset == 'train':
-        dataset = MoiDataset(sub_w_cosmos=ds2, sub_wo_cosmos=biocard, 
-                             split=subset, limit_angle=None, **kwargs)
+        dataset = MoiDataset(sub_w_cosmos=train_set_w_cosmos, sub_wo_cosmos=train_set_wo_cosmos,
+                             split=subset, small_angles=None, **kwargs)
+        if len(train_set_w_cosmos) and len(train_set_wo_cosmos):
+            loader = torch.utils.data.DataLoader(
+                dataset,
+                batch_sampler=get_mixing_sampler(dataset.patch_list, batch_size=batch_size, shuffle=True),
+                num_workers=4,
+                pin_memory=True,
+            )
+        else:
+            loader = torch.utils.data.DataLoader(
+                dataset,
+                batch_size=batch_size,
+                shuffle=True,
+                drop_last=True,
+                num_workers=4,
+                pin_memory=True,
+            )
+    elif subset == 'validation':
+        dataset = MoiDataset(sub_w_cosmos=val_set, split=subset, small_angles=False, **kwargs)
         loader = torch.utils.data.DataLoader(
             dataset,
-            # TODO - generalize!
-            batch_sampler=get_mixing_sampler(dataset.patch_list, batch_size=batch_size, shuffle=True),
-            # batch_size=batch_size,
-            # shuffle=True,
-            # drop_last=True,
-            num_workers=4,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=0,
             pin_memory=True,
+            drop_last=False,
         )
     elif subset == 'test':
-        dataset = MoiDataset(sub_w_cosmos=ds1, split=subset, limit_angle=None, **kwargs)
+        dataset = MoiDataset(sub_w_cosmos=test_set, split=subset, small_angles=False, **kwargs)
         loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
