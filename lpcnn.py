@@ -87,7 +87,7 @@ class LPCNN(nn.Module):
 		self.gen = nn.Sequential(
 				nn.Conv3d(in_channels=1, out_channels=n_channels, kernel_size=3, stride=1, padding=1, bias=False),
 				nn.ReLU(inplace=True),
-				self.make_layer(wBasicBlock, num_of_layer=n_wblocks, n_planes=n_channels),
+				self.make_layer(wBasicBlock, num_of_layers=n_wblocks, n_planes=n_channels),
 				nn.Conv3d(in_channels=n_channels, out_channels=n_channels, kernel_size=1, stride=1, padding=0, bias=False),
 				nn.ReLU(inplace=True),
 				nn.Conv3d(in_channels=n_channels, out_channels=n_channels, kernel_size=1, stride=1, padding=0, bias=False),
@@ -95,9 +95,9 @@ class LPCNN(nn.Module):
 				nn.Conv3d(in_channels=n_channels, out_channels=1, kernel_size=1, stride=1, padding=0, bias=False)
 		)
 				
-	def make_layer(self, block, num_of_layer, n_planes=32):
+	def make_layer(self, block, num_of_layers, n_planes=32):
 		layers = []
-		for _ in range(num_of_layer):
+		for _ in range(num_of_layers):
 			layers.append(block(inplanes=n_planes, planes=n_planes))
 		return nn.Sequential(*layers)
 
