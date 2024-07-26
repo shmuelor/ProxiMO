@@ -27,7 +27,6 @@ class MCLoss(nn.Module):
             yhat[bn] = A[bn].forward(xhat_pad)[:, :y_dim0, :y_dim1, :y_dim2]
         return self.loss(yhat[mask == 1], y[mask == 1])
 
-    # def forward()
 
 class CrossLoss(nn.Module):
     def __init__(self, type='l1'):
