@@ -48,10 +48,10 @@ device = 'cuda'
 
 ds1_train = [1,2,4,5,8,9]
 ds1_val = [3,6]
-ds2 = np.arange(101, 113)
-biocard = np.concatenate((np.arange(1001, 1101), np.arange(2001, 2101), np.arange(3001, 3101),
-                            np.arange(4001, 4101), np.arange(5001, 5100)))
-biocard_all = np.concatenate((biocard, np.arange(6001, 6024)))
+# ds2 = np.arange(101, 113)
+# biocard = np.concatenate((np.arange(1001, 1101), np.arange(2001, 2101), np.arange(3001, 3101),
+#                             np.arange(4001, 4101), np.arange(5001, 5100)))
+# biocard_all = np.concatenate((biocard, np.arange(6001, 6024)))
 
 def main(unsupervised, save_dir):
     os.makedirs(save_dir, exist_ok=True)
@@ -64,9 +64,9 @@ def main(unsupervised, save_dir):
 
     val_loader = get_loader('validation', val_set=ds1_val, sep=test_sep, norm=norm)
     if unsupervised:
-        train_loader = get_loader('train', train_set_w_cosmos=[], train_set_wo_cosmos=np.concatenate((ds1_train, biocard)), batch_size=batch_size, is_aug=is_aug, norm=norm)
+        train_loader = get_loader('train', train_set_w_cosmos=[], train_set_wo_cosmos=ds1_train, batch_size=batch_size, is_aug=is_aug, norm=norm)
     else:
-        train_loader = get_loader('train', train_set_w_cosmos=ds1_train, train_set_wo_cosmos=biocard, batch_size=batch_size, is_aug=is_aug, norm=norm)
+        train_loader = get_loader('train', train_set_w_cosmos=[2,5,9], train_set_wo_cosmos=ds1_train, batch_size=batch_size, is_aug=is_aug, norm=norm)
     
     model = LPCNN_model(oj(train_loader.dataset.data_root, 'train_gt_mean_partition.npy'),
                     oj(train_loader.dataset.data_root, 'train_gt_std_partition.npy')).to(device)
