@@ -1,8 +1,8 @@
-# unsupervised learning with multiple operators
 
 import os
 
 oj = os.path.join
+import argparse
 import sys
 
 import nibabel as nib
@@ -28,15 +28,15 @@ mean_shift_val = -0.00028766496966350506
 def main(save_dir=''):
     device = 'cuda'
     scaling_fac = 1.
-    loss_type = 'l2'
+    # loss_type = 'l2'
     subset = 'test'
     sep = 'whole'
     norm = True
 
     print(save_dir)
     
-    use_pinv = False
-    unet = False
+    # use_pinv = False
+    # unet = False
     
     loader = get_loader(subset=subset, test_set=[3,6], sep=sep, norm=norm)
     
@@ -65,8 +65,8 @@ def evaluate(model, loader, A_type, save_img, save_dir, subset, scaling_fac=1., 
     assert loader.batch_size == 1
 
     # pytorch testing/validating loop
-    psnr_vals = {'moi': [], 'pinv': []}
-    ssim_vals = {'moi': [], 'pinv': []}
+    psnr_vals = {'proximo': [], 'pinv': []}
+    ssim_vals = {'proximo': [], 'pinv': []}
     for i, batch in enumerate(loader):
         batch_phase = batch['phase'].float().to(device)
         batch_mask = batch['mask'].float().to(device)
@@ -118,12 +118,12 @@ def evaluate(model, loader, A_type, save_img, save_dir, subset, scaling_fac=1., 
         psnr_val = qsm_psnr(x, xhat, mask, subtract_mean=False)
         psnr_val_pinv = qsm_psnr(x, xpinv, mask, subtract_mean=False)
         print(f'testing sub{sub} ori{ori}, psnr: {psnr_val}, psnr_pinv: {psnr_val_pinv}')
-        psnr_vals['moi'].append(psnr_val)
+        psnr_vals['proximo'].append(psnr_val)
         psnr_vals['pinv'].append(psnr_val_pinv)
         ssim_val = qsm_ssim(x, xhat, subtract_mean=False)
         ssim_val_pinv = qsm_ssim(x, xpinv, subtract_mean=False)
         print(f'testing sub{sub} ori{ori}, ssim: {ssim_val}, ssim_pinv: {ssim_val_pinv}')
-        ssim_vals['moi'].append(ssim_val)
+        ssim_vals['proximo'].append(ssim_val)
         ssim_vals['pinv'].append(ssim_val_pinv)
         
         if save_img:
@@ -141,12 +141,12 @@ def evaluate(model, loader, A_type, save_img, save_dir, subset, scaling_fac=1., 
 
 
     print(save_dir)
-    print(f'psnr (moi): {np.mean(psnr_vals["moi"])} +- {np.std(psnr_vals["moi"])}')
+    print(f'psnr (proximo): {np.mean(psnr_vals["proximo"])} +- {np.std(psnr_vals["proximo"])}')
     print(f'psnr (pinv): {np.mean(psnr_vals["pinv"])} +- {np.std(psnr_vals["pinv"])}')
-    print(f'ssim (moi): {np.mean(ssim_vals["moi"])} +- {np.std(ssim_vals["moi"])}')
+    print(f'ssim (proximo): {np.mean(ssim_vals["proximo"])} +- {np.std(ssim_vals["proximo"])}')
     print(f'ssim (pinv): {np.mean(ssim_vals["pinv"])} +- {np.std(ssim_vals["pinv"])}')
-    print('psnr moi-pinv:', np.mean(psnr_vals["moi"]) - np.mean(psnr_vals["pinv"]))
-    print('ssim moi-pinv:', np.mean(ssim_vals["moi"]) - np.mean(ssim_vals["pinv"]))
+    print('psnr proximo-pinv:', np.mean(psnr_vals["proximo"]) - np.mean(psnr_vals["pinv"]))
+    print('ssim proximo-pinv:', np.mean(ssim_vals["proximo"]) - np.mean(ssim_vals["pinv"]))
     print('alpha: %.3f' %(model.alpha.detach().cpu().numpy()))
     
     return psnr_vals, ssim_vals
@@ -154,6 +154,11 @@ def evaluate(model, loader, A_type, save_img, save_dir, subset, scaling_fac=1., 
 
 
 if __name__ == '__main__':
-    experiment_path = 'save_dir/moi_un_ds1bio_v36_tds2_sgd1e3'
-    main(save_dir=experiment_path)
+    parser = argparse.ArgumentParser(description='test ProxiMO')
+    parser.add_argument('-s','--save_dir', help='experiment dir', required=True)
+    args = vars(parser.parse_args())
+    save_dir = args['save_dir']
+
+    # experiment_path = 'save_dir/exp1'
+    main(save_dir=save_dir)
     
