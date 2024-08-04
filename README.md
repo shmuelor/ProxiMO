@@ -14,8 +14,8 @@ pip install -r requirements.txt
 ```
 
 
-## Usage
-This code uses the dataset of [LP-CNN](https://github.com/Sulam-Group/LPCNN). It should be taken from there, with the parmeter NUMBER equal to 1 (i.e.single phase).
+## Data
+This code uses the dataset of [LP-CNN](https://github.com/Sulam-Group/LPCNN).
 
 ## Contact
 If you have any questions, please contact me at

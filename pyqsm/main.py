@@ -11,11 +11,9 @@ oj = os.path.join
 # test tkd
 data_dir = '/cis/home/sorenst3/my_documents/unsup_moi/data/'
 for sub in os.listdir(data_dir):
-    if not os.path.exists(oj(data_dir, sub, 'cosmos', f'{sub}_cosmos.nii.gz')):
-        # no cosmos, can't compare the tkd to gt
-        continue
-    
     mask_path = oj(data_dir, sub, 'cosmos', f'{sub}_mask.nii.gz')
+    if not os.path.exists(mask_path):
+        continue
     mask = nib.load(mask_path).get_fdata()
 
     for ori in os.listdir(oj(data_dir, sub)):
