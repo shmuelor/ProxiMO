@@ -35,17 +35,9 @@ def main(save_dir=''):
 
     print(save_dir)
     
-    # use_pinv = False
-    # unet = False
     
     loader = get_loader(subset=subset, test_set=[3,6], sep=sep, norm=norm)
     
-    # model_mean = torch.from_numpy(np.load(str(oj(loader.dataset.data_root, 'train_gt_mean_whole.npy')))).float()
-    # model_std = torch.from_numpy(np.load(str(oj(loader.dataset.data_root, 'train_gt_std_whole.npy')))).float()
-    # model = Model(gt_mean=model_mean, gt_std=model_std, use_pinv=use_pinv, unet=unet, norm=norm).to(device)
-    
-    # model = LPCNN_model(oj(loader.dataset.data_root, 'train_gt_mean_whole.npy'), 
-                        #   oj(loader.dataset.data_root, 'train_gt_std_whole.npy')).to(device)
     
     model = LPCNN_model(oj(loader.dataset.data_root, f'train_gt_mean_{sep}.npy'), 
                         oj(loader.dataset.data_root, f'train_gt_std_{sep}.npy')).to(device)
