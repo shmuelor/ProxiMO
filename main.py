@@ -183,8 +183,6 @@ def main(unsupervised, save_dir):
                 torch.save(model.state_dict(), os.path.join(save_dir, 'model.pth'))
                 nib.Nifti1Image(xhat.cpu().detach().numpy(), affine).to_filename(oj(save_dir, f'iter{total_iter}_xhat.nii.gz'))
                 nib.Nifti1Image(batch_mask.cpu().detach().numpy(), affine).to_filename(oj(save_dir, f'iter{total_iter}_mask.nii.gz'))
-                # if lpcnn: # has_cosmos
-                #     nib.Nifti1Image(x.cpu().detach().numpy(), affine).to_filename(oj(save_dir, f'iter{total_iter}_x.nii.gz'))
                 if A_type == 'Qsm':
                     nib.Nifti1Image(y[0].cpu().detach().numpy(), affine).to_filename(oj(save_dir, f'iter{total_iter}_y.nii.gz'))
                 else:
