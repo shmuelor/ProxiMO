@@ -1,6 +1,9 @@
 # ProxiMO
 ## Official implementation of ProxiMO: Proximal Multi-Operator Networks for Quantitative Susceptibility Mapping
 ProxiMO: Proximal Multi-Operator Networks for Quantitative Susceptibility Mapping (to appear in [MLCN 2024](https://mlcnworkshop.github.io/))
+Full paper: [here](https://link.springer.com/chapter/10.1007/978-3-031-78761-4_2)
+Awarded second-best paper at the MLCN workshop during MICCAI 2024.
+
 
 ## Dependencies
 Create and activate a new conda environment
